@@ -17,6 +17,8 @@ export const categoryMap = {
 };
 
 export const settings = {
-
+  apiUrl: API_URL,
+  cdnUrl: CDN_URL,
+  categories: categoryMap,
 };
 

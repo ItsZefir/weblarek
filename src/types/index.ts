@@ -23,7 +23,7 @@ export interface IApiProductsResponse {
 }
 
 export interface IOrderData {
-    payment: string;
+    payment: TPayment;
     email: string;
     phone: string;
     address: string;

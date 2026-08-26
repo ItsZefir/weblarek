@@ -6,6 +6,6 @@ export class AppApi {
   }
 
   postOrder(order: IOrderData): Promise<IOrderResult> {
-    return this.api.post('/order/', order);
+    return this.api.post<IOrderResult>('/order/', order);
   }
 }
