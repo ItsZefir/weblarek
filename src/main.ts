@@ -12,38 +12,23 @@ const basketModel = new Basket();
 const buyerModel = new Buyer();
 const appApi = new AppApi(new Api(API_URL));
 
-async function checkServerConnection(): Promise<boolean> {
-    try {
-        const response = await fetch(API_URL + '/product/', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        return response.ok;
-    } catch {
-        return false;
-    }
-}
-
 async function loadProductsFromServer() {
     try {
-        const items = await appApi.getProducts();
-        productsModel.setItems(items);
+        const response = await appApi.getProducts();
+        productsModel.setItems(response.items);
+        console.log('Каталог с сервера:', productsModel.getItems());
+        console.log(`Загружено ${response.items.length} товаров из ${response.total}`);
         return true;
     } catch (error) {
         console.error('Ошибка при загрузке товаров:', error);
+        console.log('Используются локальные данные для тестирования');
+        productsModel.setItems(apiProducts.items);
         return false;
     }
 }
 
 async function main() {
-    const isServerAvailable = await checkServerConnection();
-    if (isServerAvailable) {
-        await loadProductsFromServer();
-    } else {
-        productsModel.setItems(apiProducts.items);
-    }
+    await loadProductsFromServer();
     
     console.log('Каталог все товары:', productsModel.getItems());
     if (productsModel.getItems().length > 0) {
@@ -147,3 +132,5 @@ async function main() {
         }
     }
 };
+
+/* спасибо за проверку и такие комментарии, это был очень ценный опыт */

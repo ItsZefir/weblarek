@@ -17,11 +17,6 @@ export interface IBuyer {
 }
 export type TPayment = 'cash' | 'card';
 
-export interface IApiProductsResponse {
-    items: IProduct[];
-    total: number;
-}
-
 export interface IOrderData {
     payment: TPayment;
     email: string;
