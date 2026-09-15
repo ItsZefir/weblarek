@@ -1,34 +1,81 @@
-import { IBuyer, TPayment } from '../../types';
-
-export type TBuyerErrors = Partial<Record<keyof IBuyer, string>>;
+import { IBuyer, TPayment } from "../../types/index";
+import { IEvents } from "../base/Events";
 
 export class Buyer {
-  private data: Partial<IBuyer> = {};
+    protected data: IBuyer;
+    protected events: IEvents;
 
-  setField<K extends keyof IBuyer>(field: K, value: IBuyer[K]): void {
-    this.data[field] = value;
-  }
-  getData(): Partial<IBuyer> {
-    return this.data;
-  }
-  clear(): void {
-    this.data = {};
-  }
-  validate(): TBuyerErrors {
-    const errors: TBuyerErrors = {};
-    if (!this.data.payment) errors.payment = 'Не выбран вид оплаты';
-    if (!this.data.email) errors.email = 'Укажите email';
-    if (!this.data.phone) errors.phone = 'Укажите телефон';
-    if (!this.data.address) errors.address = 'Укажите адрес';
-    return errors;
-  }
-  isComplete(): boolean {
-    return !!(this.data.payment && this.data.email && this.data.phone && this.data.address);
-  }
-  getCompleteData(): IBuyer | null {
-    if (this.isComplete()) {
-      return this.data as IBuyer;
+    constructor(events: IEvents) {
+        this.events = events;
+        this.data = {
+            payment: "",
+            address: "",
+            email: "",
+            phone: "",
+        };
     }
-    return null;
-  }
+
+    savePaymentType(payment: TPayment) {
+        this.data.payment = payment;
+        this.events.emit('buyer-data:changed', { field: 'payment' });
+    }
+
+    saveAddress(address: string) {
+        this.data.address = address;
+        this.events.emit('buyer-data:changed', { field: 'address' });
+    }
+
+    saveEmail(email: string) {
+        this.data.email = email;
+        this.events.emit('buyer-data:changed', { field: 'email' });
+    }
+
+    savePhone(phone: string) {
+        this.data.phone = phone;
+        this.events.emit('buyer-data:changed', { field: 'phone' });
+    }
+
+    getData(): IBuyer {
+        return this.data;
+    }
+
+    clearBuyerData() {
+        this.data = {
+            payment: "",
+            address: "",
+            email: "",
+            phone: "",
+        };
+    }
+
+    validate(): {
+        payment: string;
+        address: string;
+        email: string;
+        phone: string;
+    } {
+        const errors = {
+            payment: "",
+            address: "",
+            email: "",
+            phone: "",
+        };
+
+        if (!this.data.payment.trim()) {
+            errors.payment = "Выберите вид оплаты";
+        }
+        if (!this.data.address.trim()) {
+            errors.address = "Не указан адрес";
+        }
+
+        if (!this.data.phone.trim()) {
+            errors.phone = "Не указан телефон";
+        }
+
+        if (!this.data.email.trim()) {
+            errors.email = "Не указан email";
+        }
+
+        return errors;
+    }
 }
