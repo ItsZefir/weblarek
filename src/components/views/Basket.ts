@@ -8,10 +8,9 @@ interface IBasket {
 }
 
 export class Basket extends Component<IBasket> {
-    protected placeButton: HTMLButtonElement;
-    protected priceElement: HTMLElement;
-    protected basketListElement: HTMLElement;
-
+  protected placeButton: HTMLButtonElement;
+  protected priceElement: HTMLElement;
+  protected basketListElement: HTMLElement;
 
   constructor(container: HTMLElement, protected events: IEvents) {
     super(container);
@@ -26,12 +25,7 @@ export class Basket extends Component<IBasket> {
   }
 
   set items(value: HTMLElement[]) {
-    this.basketListElement.innerHTML = '';
-    if (value.length === 0) {
-      this.basketListElement.innerHTML = '<p class="basket__empty">Корзина пуста</p>';
-    } else {
-      this.basketListElement.append(...value);
-    }
+    this.basketListElement.replaceChildren(...value);
   }
 
   set price(value: number) {

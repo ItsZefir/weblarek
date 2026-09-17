@@ -1,4 +1,4 @@
-import { IBuyer, TPayment } from "../../types/index";
+import { IBuyer, TPayment, IBuyerValidationErrors } from "../../types/index";
 import { IEvents } from "../base/Events";
 
 export class Buyer {
@@ -46,15 +46,11 @@ export class Buyer {
             email: "",
             phone: "",
         };
+        this.events.emit('buyer-data:changed');
     }
 
-    validate(): {
-        payment: string;
-        address: string;
-        email: string;
-        phone: string;
-    } {
-        const errors = {
+    validate(): IBuyerValidationErrors {
+        const errors: IBuyerValidationErrors = {
             payment: "",
             address: "",
             email: "",
@@ -67,11 +63,9 @@ export class Buyer {
         if (!this.data.address.trim()) {
             errors.address = "Не указан адрес";
         }
-
         if (!this.data.phone.trim()) {
             errors.phone = "Не указан телефон";
         }
-
         if (!this.data.email.trim()) {
             errors.email = "Не указан email";
         }
