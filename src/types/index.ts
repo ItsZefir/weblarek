@@ -42,3 +42,9 @@ export interface IOrderResultApi {
     items: IProduct[];
     total: number;
 }
+
+export type TOrderFieldChange =
+    | { field: 'address'; value: string }
+    | { field: 'payment'; value: TPayment }
+    | { field: 'email'; value: string }
+    | { field: 'phone'; value: string };

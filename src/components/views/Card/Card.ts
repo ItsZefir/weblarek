@@ -20,6 +20,6 @@ export abstract class Card<T> extends Component<TCard & T> {
   }
 
   set price(value: number | null) {
-    this.priceElement.textContent = value ? `${value} синапсов` : 'Бесценно';
+    this.priceElement.textContent = value === null ? 'Бесценно' : `${value} синапсов`;
   }
 }

@@ -4,7 +4,7 @@ import { ProductCatalog } from "./components/models/ProductCatalog";
 import { Api } from "./components/base/Api";
 import { API_URL } from "./utils/constants";
 import { ServerApi } from "./components/communication/ServerApi";
-import { IOrderResultApi, IProduct, TOrderResponse } from "./types";
+import { IOrderResultApi, IProduct, TOrderResponse, TOrderFieldChange } from "./types";
 import { Gallery } from "./components/views/Gallery";
 import { CardCatalog } from "./components/views/Card/CardCatalog";
 import { cloneTemplate, ensureElement } from "./utils/utils";
@@ -38,28 +38,7 @@ const success = new Success(cloneTemplate('#success'), {
 const orderForm = new OrderForm(cloneTemplate('#order'), events);
 const contactsForm = new ContactsForm(cloneTemplate('#contacts'), events);
 
-const cardPreview = new CardPreview(cloneTemplate('#card-preview'), {
-    onButtonClick: (product: IProduct) => {
-        const isInCart = shoppingCartModel.checkSelectedProduct(product.id);
-
-        if (isInCart) {
-            shoppingCartModel.deleteSelectedProduct(product.id);
-        } else if (product.price !== null) {
-            shoppingCartModel.addSelectedProduct(product);
-        }
-
-        modal.close();
-    }
-});
-
-serverApiModel
-    .getProducts()
-    .then((result: IOrderResultApi) => {
-        productsModel.saveProducts(result.items);
-    })
-    .catch((error) => {
-        console.error("Ошибка", error);
-    });
+const cardPreview = new CardPreview(cloneTemplate('#card-preview'), events);
 
 events.on("card-catalog:changed", () => {
     const items = productsModel.getProducts().map((item) => {
@@ -75,7 +54,11 @@ events.on("card:selected", (item: IProduct) => {
     productsModel.saveProduct(item);
 });
 
-events.on("product:selected", (item: IProduct) => {
+events.on('product:selected', () => {
+    const item = productsModel.getProduct();
+    if (!item) {
+        return;
+    }
     modal.render({
         content: cardPreview.render({
             title: item.title,
@@ -83,7 +66,6 @@ events.on("product:selected", (item: IProduct) => {
             image: item.image,
             category: item.category,
             description: item.description,
-            product: item,
             buttonText: item.price === null
                 ? 'Недоступно'
                 : shoppingCartModel.checkSelectedProduct(item.id)
@@ -95,13 +77,25 @@ events.on("product:selected", (item: IProduct) => {
     modal.open();
 });
 
+events.on('card:action', () => {
+    const product = productsModel.getProduct();
+    if (!product) {
+        return;
+    }
+    if (shoppingCartModel.checkSelectedProduct(product.id)) {
+        shoppingCartModel.deleteSelectedProduct(product.id);
+    } else if (product.price !== null) {
+        shoppingCartModel.addSelectedProduct(product);
+    }
+    modal.close();
+});
+
 events.on("shopping-cart:changed", () => {
     const basketItems = shoppingCartModel.getSelectedProducts().map((product, index) => {
         const cardBasket = new CardBasket(
             cloneTemplate("#card-basket"),
-            (id: string) => shoppingCartModel.deleteSelectedProduct(id)
+            () => shoppingCartModel.deleteSelectedProduct(product.id)
         );
-        cardBasket.setId(product.id);
         return cardBasket.render({
             title: product.title,
             price: product.price,
@@ -111,11 +105,16 @@ events.on("shopping-cart:changed", () => {
 
     basket.render({
         items: basketItems,
-        price: shoppingCartModel.getTotal() || 0
+        price: shoppingCartModel.getTotal() || 0,
+        purchaseOpportunity: shoppingCartModel.getSelectedProductsAmount() > 0,
     });
 
-    header.counter = shoppingCartModel.getSelectedProductsAmount();
-    basket.setPurchaseOpportunity(shoppingCartModel.getSelectedProductsAmount() === 0);
+    header.render({ counter: shoppingCartModel.getSelectedProductsAmount() });
+});
+
+events.on('basket:open', () => {
+    modal.render({ content: basket.render() });
+    modal.open();
 });
 
 events.on('order:open', () => {
@@ -137,8 +136,7 @@ events.on('contacts:submit', () => {
 
     serverApiModel.postOrder(orderData)
         .then((response: TOrderResponse) => {
-            success.total = response.total;
-            modal.render({ content: success.render() });
+            modal.render({ content: success.render({ total: response.total }) });
             modal.open();
 
             buyerModel.clearBuyerData();
@@ -149,21 +147,19 @@ events.on('contacts:submit', () => {
         });
 });
 
-events.on('order:changed', (payload: { field: string; value: string }) => {
-    if ('address' in payload) {
-        buyerModel.saveAddress(payload.address);
-    }
-    if ('payment' in payload) {
-        buyerModel.savePaymentType(payload.payment);
+events.on('order:changed', (payload: TOrderFieldChange) => {
+    if (payload.field === 'address') {
+        buyerModel.saveAddress(payload.value);
+    } else if (payload.field === 'payment') {
+        buyerModel.savePaymentType(payload.value);
     }
 });
 
-events.on('contacts:changed', (payload: { field: string; value: string }) => {
-    if ('email' in payload) {
-        buyerModel.saveEmail(payload.email);
-    }
-    if ('phone' in payload) {
-        buyerModel.savePhone(payload.phone);
+events.on('contacts:changed', (payload: TOrderFieldChange) => {
+    if (payload.field === 'email') {
+        buyerModel.saveEmail(payload.value);
+    } else {
+        buyerModel.savePhone(payload.value);
     }
 });
 
@@ -175,22 +171,27 @@ events.on('buyer-data:changed', () => {
         address: buyerData.address,
         payment: buyerData.payment,
         valid: !errors.address && !errors.payment,
-        errors: [errors.address, errors.payment].filter(Boolean).join(', '),
+        errors: [errors.address, errors.payment].filter((e): e is string => Boolean(e)),
     });
 
     contactsForm.render({
         email: buyerData.email,
         phone: buyerData.phone,
         valid: !errors.email && !errors.phone,
-        errors: [errors.email, errors.phone].filter(Boolean).join(', '),
+        errors: [errors.email, errors.phone].filter((e): e is string => Boolean(e)),
     });
 });
 
-events.on('basket:open', () => {
-    modal.render({ content: basket.render() });
-    modal.open();
-});
+// Модели приводим в исходное состояние ПОСЛЕ регистрации всех подписок,
+// чтобы shopping-cart:changed и buyer-data:changed вызвали начальный рендер.
+shoppingCartModel.clearShoppingCart();
+buyerModel.clearBuyerData();
 
-events.on('shopping-cart:open', () => {
-    events.emit('basket:open');
-});
+serverApiModel
+    .getProducts()
+    .then((result: IOrderResultApi) => {
+        productsModel.saveProducts(result.items);
+    })
+    .catch((error) => {
+        console.error("Ошибка", error);
+    });

@@ -5,9 +5,12 @@ import { ensureElement } from "../../../utils/utils";
 import { IEvents } from "../../base/Events";
 
 type CategoryKey = keyof typeof categoryMap;
+
 export type TCardPreview = Pick<IProduct, 'image' | 'category' | 'description'> & {
     title: string;
     price: number | null;
+    disabled: boolean;
+    buttonText: string;
 };
 
 export class CardPreview extends Card<TCardPreview> {
@@ -39,11 +42,7 @@ export class CardPreview extends Card<TCardPreview> {
 
     set image(value: string) {
         const title = this.titleElement.textContent ?? '';
-        this.setImage(
-            this.imageElement,
-            CDN_URL + value.slice(0, -3) + 'png',
-            title
-        );
+        this.setImage(this.imageElement, `${CDN_URL}/${value.replace(/\.[^.]+$/, '.png')}`, title);
     }
 
     set description(value: string) {
@@ -55,7 +54,7 @@ export class CardPreview extends Card<TCardPreview> {
         this.cardButton.classList.toggle('button_disabled', value);
     }
 
-    set cardButtonText(value: string) {
+    set buttonText(value: string) {
         this.cardButton.textContent = value;
     }
 }

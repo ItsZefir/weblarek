@@ -1,41 +1,47 @@
 import { Form } from "./Form";
-import { IEvents } from "../../base/Events";
 import { ensureElement } from "../../../utils/utils";
+import { IEvents } from "../../base/Events";
+import { TPayment } from "../../../types";
 
-export class OrderForm extends Form {
-  protected paymentButtons: HTMLButtonElement[];
-  protected addressElement: HTMLInputElement;
+export interface IOrderForm {
+    payment: TPayment;
+    address: string;
+}
 
-  constructor(container: HTMLFormElement, events: IEvents) {
-    super(container, events);
+export class OrderForm extends Form<IOrderForm> {
+    protected paymentButtons: HTMLButtonElement[];
+    protected addressElement: HTMLInputElement;
 
-    this.paymentButtons = Array.from(this.container.querySelectorAll('button[name]'));
-    this.addressElement = ensureElement<HTMLInputElement>('input[name="address"]', this.container);
-    
-    this.paymentButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        events.emit('order:changed', { 
-          field: 'payment', 
-          value: button.getAttribute('name') || '' 
+    constructor(container: HTMLFormElement, events: IEvents) {
+        super(container, events);
+
+        this.paymentButtons = Array.from(container.querySelectorAll('button[name]'));
+        this.addressElement = ensureElement<HTMLInputElement>('input[name="address"]', container);
+
+        this.paymentButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                events.emit('order:changed', {
+                    field: 'payment',
+                    value: button.name,
+                });
+            });
         });
-      });
-    });
-    
-    this.addressElement.addEventListener('input', () => {
-      events.emit('order:changed', { 
-        field: 'address', 
-        value: this.addressElement.value 
-      });
-    });
-  }
 
-  set payment(value: string) {
-    this.paymentButtons.forEach(btn => {
-      btn.classList.toggle('button_alt-active', btn.getAttribute('name') === value);
-    });
-  }
+        this.addressElement.addEventListener('input', () => {
+            events.emit('order:changed', {
+                field: 'address',
+                value: this.addressElement.value,
+            });
+        });
+    }
 
-  set address(value: string) {
-    this.addressElement.value = value;
-  }
+    set address(value: string) {
+        this.addressElement.value = value;
+    }
+
+    set payment(value: TPayment) {
+        this.paymentButtons.forEach((button) => {
+            button.classList.toggle('button_alt-active', button.name === value);
+        });
+    }
 }

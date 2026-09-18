@@ -5,6 +5,7 @@ import { IEvents } from "../base/Events";
 interface IBasket {
   items: HTMLElement[];
   price: number;
+  purchaseOpportunity: boolean;
 }
 
 export class Basket extends Component<IBasket> {
@@ -32,8 +33,8 @@ export class Basket extends Component<IBasket> {
     this.priceElement.textContent = `${value} синапсов`;
   }
 
-  setPurchaseOpportunity(isEmpty: boolean) {
-    this.placeButton.disabled = isEmpty;
-    this.placeButton.classList.toggle('button_disabled', isEmpty);
+  set purchaseOpportunity(value: boolean) {
+    this.placeButton.disabled = !value;
+    this.placeButton.classList.toggle('button_disabled', !value);
   }
 }
