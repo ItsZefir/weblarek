@@ -198,3 +198,5 @@ serverApiModel
     .catch((error) => {
         console.error("Ошибка", error);
     });
+
+    // спасибо большое за проверку)
