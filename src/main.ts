@@ -27,7 +27,7 @@ const shoppingCartModel = new ShoppingCart(events);
 const buyerModel = new Buyer(events);
 
 const gallery = new Gallery(ensureElement('.gallery'));
-const modal = new Modal(ensureElement('#modal-container'), events);
+const modal = new Modal(ensureElement('#modal-container'));
 const header = new Header(ensureElement('.header'), events);
 
 const basket = new Basket(cloneTemplate('#basket'), events);
@@ -45,7 +45,12 @@ events.on("card-catalog:changed", () => {
         const cardCatalog = new CardCatalog(cloneTemplate("#card-catalog"), {
             onClick: () => events.emit("card:selected", item),
         });
-        return cardCatalog.render(item);
+        return cardCatalog.render({
+            title: item.title,
+            price: item.price,
+            image: item.image,
+            category: item.category,
+        });
     });
     gallery.render({ catalog: items });
 });
@@ -182,8 +187,6 @@ events.on('buyer-data:changed', () => {
     });
 });
 
-// Модели приводим в исходное состояние ПОСЛЕ регистрации всех подписок,
-// чтобы shopping-cart:changed и buyer-data:changed вызвали начальный рендер.
 shoppingCartModel.clearShoppingCart();
 buyerModel.clearBuyerData();
 
